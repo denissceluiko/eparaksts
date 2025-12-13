@@ -1,0 +1,24 @@
+{
+    "name": "dencel/eparaksts",
+    "type": "library",
+    "version": "0.1",
+    "authors": [
+        {
+            "name": "Deniss Celuiko",
+            "email": "deniss@celuiko.com",
+            "homepage": "https://celuiko.com/"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Dencel\\Eparaksts\\": "src/"
+        }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.10",
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.4"
+    }
+}
