@@ -22,7 +22,8 @@ class Eparaksts
     public const ACR_MOBILEID_CROSS             = 'urn:eparaksts:authentication:flow:mobileid:cross-device';
     public const ACR_MOBILE_EID                 = 'urn:eparaksts:authentication:flow:mobile-eid';
 
-    public const CERT_AUTHENTICATION            = 'authentication';
+    public const CERT_MOBILEID_AUTH             = 'mobileid:auth';
+    public const CERT_MOBILEID_SIGN             = 'mobileid:sign';
     public const CERT_SIGNING                   = 'signing';
 
     public function __construct(
@@ -72,6 +73,15 @@ class Eparaksts
             static::GRANT_CLIENT_CREDENTIALS,
             ['scope' => static::SCOPE_SIGNAPI]
         );
+    }
+
+    public function logout(string $redirect = ''): ?string
+    {
+        $query = http_build_query([
+            'redirect_uri' => $redirect,
+        ]);
+
+        return $this->host.'/trustedx-authserver/lvrtc-eipsign-idp/logout?'.$query;
     }
 
     public function me(?string $scope = null): array
@@ -135,7 +145,6 @@ class Eparaksts
         ]);
 
         if ($this->response->getStatusCode() !== 200) {
-            error_log('Signing failed with code: ' . $this->response->getStatusCode());
             return null;
         }
 
@@ -145,7 +154,8 @@ class Eparaksts
     public function getIdentity(string $type): ?array
     {
         if (!in_array($type, [
-            static::CERT_AUTHENTICATION,
+            static::CERT_MOBILEID_AUTH,
+            static::CERT_MOBILEID_SIGN,
             static::CERT_SIGNING,
         ])) return null;
 
@@ -158,7 +168,8 @@ class Eparaksts
             return null;
 
         $types = [
-            static::CERT_AUTHENTICATION => ['labels' => ['mobileid', 'x509:keyUsage:digitalSignature']],
+            static::CERT_MOBILEID_AUTH => ['labels' => ['mobileid', 'x509:keyUsage:digitalSignature'],  'description' => 'eparaksts:mobileid:auth'],
+            static::CERT_MOBILEID_SIGN => ['labels' => ['mobileid', 'x509:keyUsage:contentCommitment'], 'description' => 'eparaksts:mobileid:sign'],
             static::CERT_SIGNING => ['labels' => ['serverid']],
         ];
 

@@ -28,16 +28,10 @@ trait CanRequestTokens
 
         $responseArray = json_decode($response->getBody()->getContents(), true);
 
-        // error_log(json_encode([
-        //     $this->response->getStatusCode(), 
-        //     $responseArray
-        // ]));
-
         if ($response->getStatusCode() !== 200) 
             return false;
         
         if (!empty($responseArray['error'])) {
-            error_log(json_encode($responseArray));
             return false;
         }
 

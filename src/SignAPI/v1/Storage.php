@@ -27,12 +27,19 @@ class Storage
                     ? 'file.txt'
                     : substr($file, strrpos($file, '/'));
 
+        $mimetype = is_string($contents)
+                    ? 'text/plain'
+                    : mime_content_type($filename) ?? '';
+
         $response = $this->signAPI->put(static::ENDPOINT . $sessionId . '/upload', [
             'multipart' => [
                 [
                     'name' => 'file',
                     'filename' => $filename,
                     'contents' => $contents,
+                    'headers' => [
+                        'Content-Type' => $mimetype,
+                    ],
                 ]
             ],
         ]);
@@ -63,5 +70,28 @@ class Storage
     {
         $response = $this->signAPI->delete(static::ENDPOINT . $sessionId . '/' . $fileId);
         return $response;
+    }
+
+    public function addDocumentDigest(string $sessionId, array $files, string $signatureIndex = '0'): ?array
+    {
+        if (!array_is_list($files)) {
+            $files = [
+                [
+                    'name' => $files['name'],
+                    'digest' => $files['digest'],
+                    'digest_algorithm' => $files['digest_algorithm'],
+                ],
+            ];
+        }
+
+        $response = $this->signAPI->post(static::ENDPOINT . $sessionId . '/addDocumentDigest', [
+            'files' => $files,
+            'signatureIndex' => $signatureIndex,
+        ]);
+
+        if ($response->getStatusCode() !== 200) 
+            return null;
+    
+        return json_decode($response->getBody()->getContents(), true);
     }
 }

@@ -15,15 +15,7 @@ class Signing
 
     public function calculateDigest(array|string $sessions, string $certificate, bool $signAsPDF = false, ?bool $createNewEdoc = null): ?array
     {
-        $formattedSessions = [];
-
-        if (is_string($sessions)) {
-            $formattedSessions[] = ['sessionId' => $sessions];
-        } else {
-            foreach ($sessions as $session) {
-                $formattedSessions[] = ['sessionId' => $session];
-            }
-        }
+        $formattedSessions = $this->normalizeSessions($sessions);
 
         $body = [
             'sessions' => $formattedSessions,
@@ -35,11 +27,10 @@ class Signing
         $body = array_filter($body);
 
         $response = $this->signAPI->post(static::ENDPOINT . 'calculateDigest', [
-            'body' => json_encode($body),
             'headers' => [
-                'accept' => 'application/json',
                 'content-type' => 'application/json',
             ],
+            'body' => json_encode($body),
         ]);
 
         return json_decode($response->getBody()->getContents(), true);
@@ -59,7 +50,7 @@ class Signing
      * @param array|string $sessions
      * @param string|null $signature
      * @param string $authCertificate
-     * @return void
+     * @return array
      */
     public function finalizeSigning(string $authCertificate, array|string $sessions, ?string $signature = null): array
     {
@@ -87,5 +78,74 @@ class Signing
         ]);
 
         return json_decode($response->getBody()->getContents(), true);
+    }
+
+    public function addArchive(string $authCertificate, array|string $sessions) 
+    {
+        $formattedSessions = $this->normalizeSessions($sessions);
+
+        $body = [
+            'sessions' => $formattedSessions,
+            'authCertificate' => $authCertificate,
+        ];
+
+        $response = $this->signAPI->post(static::ENDPOINT . 'addArchive', [
+            'headers' => [
+                'content-type' => 'application/json',
+            ],
+            'body' => json_encode($body),
+        ]);
+
+        return json_decode($response->getBody()->getContents(), true);
+    }
+
+    public function eSealCreate(
+        string|array $sessions, 
+        string $authCertificate, 
+        string $signKey, 
+        string $signKeyPassword, 
+        bool $signAsPDF = false, 
+        bool $createNewEdoc = false
+    ): ?array {
+        $formattedSessions = $this->normalizeSessions($sessions);
+
+        $body = [
+            'sessions' => $formattedSessions,
+            'authCertificate' => $authCertificate,
+            'signKey' => $signKey,
+            'signKeyPassword' => $signKeyPassword,
+            'signAsPdf' => $signAsPDF,
+            'createNewEdoc' => $createNewEdoc,
+        ];
+
+        $response = $this->signAPI->post(static::ENDPOINT . 'eSealCreate', [
+            'headers' => [
+                'content-type' => 'application/json',
+            ],
+            'body' => json_encode($body),
+        ]);
+
+        return json_decode($response->getBody()->getContents(), true);
+    }
+
+    protected function normalizeSessions(string|array $sessions): array
+    {
+        $normalized = [];
+
+        if (is_string($sessions)) {
+            $normalized[] = [
+                "sessionId" => $sessions,
+            ];
+        } elseif (is_array($sessions) && array_is_list($sessions)) {
+            foreach($sessions as $session) {
+                $normalized[] = [
+                    "sessionId" => $session,
+                ];
+            }
+        } else {
+            $normalized = $sessions;
+        }
+
+        return $normalized;
     }
 }
