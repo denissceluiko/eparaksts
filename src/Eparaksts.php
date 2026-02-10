@@ -2,7 +2,6 @@
 
 namespace Dencel\Eparaksts;
 
-use Dencel\Eparaksts\SignAPI\v1\SignAPI;
 use Dencel\Eparaksts\Traits\CanRequestTokens;
 use Dencel\Eparaksts\Traits\HasBasicAuthentication;
 use Dencel\Eparaksts\Traits\HasScopedTokens;
