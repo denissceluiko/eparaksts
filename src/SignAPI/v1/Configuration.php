@@ -21,7 +21,6 @@ class Configuration
         if (empty($data)) 
             return null;
 
-        $data = $data['data'];
         return empty($key) ? $data : ($data[$key] ?? null);
     }
     
