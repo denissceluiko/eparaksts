@@ -45,6 +45,13 @@ trait HasScopedTokens
         return $this->scope;
     }
 
+    public function hasValidToken(string $scope): bool
+    {
+        return $this->isValidScope($scope) 
+            && !empty($this->tokens[$scope])
+            && !$this->isExpired($scope);
+    }
+
     public function getToken(?string $scope = null): ?array
     {
         if (!empty($scope) && $this->isValidScope($scope)) {

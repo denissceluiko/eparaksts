@@ -16,9 +16,11 @@ class SignAPI
     use HasScopedTokens;
 
     protected ?Client $client = null;
+    protected ?Configuration $configuration = null;
     protected ?Session $session = null;
-    protected ?Storage $storage = null;
+    protected ?Share $share = null;
     protected ?Signing $signing = null;
+    protected ?Storage $storage = null;
 
     public function __construct(
         string $username, 
@@ -92,6 +94,24 @@ class SignAPI
         }
 
         return $this->signing;
+    }
+    
+    public function configuration(): Configuration
+    {
+        if ($this->configuration === null) {
+            $this->configuration = new Configuration($this);
+        }
+
+        return $this->configuration;
+    }
+    
+    public function share(): Share
+    {
+        if ($this->share === null) {
+            $this->share = new Share($this);
+        }
+
+        return $this->share;
     }
 
     public function get(string $path, array $options = []): ResponseInterface   
