@@ -44,7 +44,7 @@ class Storage
             ],
         ]);
 
-        if ($response->getStatusCode() !== 200) 
+        if ($response->getStatusCode() !== 201) 
             return null;
     
         return json_decode($response->getBody()->getContents(), true);
