@@ -146,6 +146,7 @@ class SignAPI
 
         $response = $this->client->request($method, $this->formEndpointURI($path), $options);
 
+        // TBI remove after dev
         error_log($path . ': ' . $response->getStatusCode() . '; ' .json_encode($options));
 
         return $response;

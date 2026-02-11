@@ -18,7 +18,7 @@ class Configuration
         $response = $this->signAPI->get(static::ENDPOINT);
         $data = json_decode($response->getBody()->getContents(), true);
 
-        if (empty($data) || empty($data['data'])) 
+        if (empty($data)) 
             return null;
 
         $data = $data['data'];
