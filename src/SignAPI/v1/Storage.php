@@ -29,7 +29,7 @@ class Storage
 
         $mimetype = is_string($contents)
                     ? 'text/plain'
-                    : mime_content_type($filename) ?? '';
+                    : mime_content_type($file) ?? '';
 
         $response = $this->signAPI->put(static::ENDPOINT . $sessionId . '/upload', [
             'multipart' => [
