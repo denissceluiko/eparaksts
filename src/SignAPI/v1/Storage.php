@@ -25,7 +25,7 @@ class Storage
 
         $filename = is_string($contents)
                     ? 'file.txt'
-                    : substr($file, strrpos($file, '/') + 1);
+                    : ltrim(substr($file, strrpos($file, '/')), '/');
 
         $mimetype = is_string($contents)
                     ? 'text/plain'

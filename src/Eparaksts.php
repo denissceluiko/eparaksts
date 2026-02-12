@@ -102,7 +102,7 @@ class Eparaksts
         return json_decode($this->response->getBody()->getContents(), true);
     }
 
-    public function signIdentity(string $id): array
+    public function getSignIdentity(string $id): array
     {
         $client = new Client();
 
@@ -150,7 +150,7 @@ class Eparaksts
          return $this->response->getBody()->getContents();
     }
 
-    public function getIdentity(string $type): ?array
+    public function findIdentity(string $type, array $identities): ?array
     {
         if (!in_array($type, [
             static::CERT_MOBILEID_AUTH,
@@ -158,24 +158,24 @@ class Eparaksts
             static::CERT_SIGNING,
         ])) return null;
 
-        if (!$this->isAuthenticated(static::SCOPE_SIGNING_IDENTITY))
-            return null;
-
-        $identities = $this->me(static::SCOPE_SIGNING_IDENTITY)['sign_identities'];
-
-        if (empty($identities)) 
-            return null;
-
-        $types = [
+         $types = [
             static::CERT_MOBILEID_AUTH => ['labels' => ['mobileid', 'x509:keyUsage:digitalSignature'],  'description' => 'eparaksts:mobileid:auth'],
             static::CERT_MOBILEID_SIGN => ['labels' => ['mobileid', 'x509:keyUsage:contentCommitment'], 'description' => 'eparaksts:mobileid:sign'],
             static::CERT_SIGNING => ['labels' => ['serverid']],
         ];
 
         $identities = $this->filterIdentities($identities, $types[$type]);
-        $identity = $this->signIdentity($identities[0]['id']);
+        
+        if (empty($identities))
+            return null;
 
-        return $identity['identity'];
+        return $identities[0];
+    }
+
+    public function findCert(string $type, array $identities): ?string
+    {
+        $identity = $this->findIdentity($type, $identities);
+        return !is_null($identity) ? $identity['details']['certificate'] : null;
     }
 
     protected function filterIdentities(array $identities, array $needles): array
