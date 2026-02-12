@@ -21,6 +21,7 @@ class SignAPI
     protected ?Share $share = null;
     protected ?Signing $signing = null;
     protected ?Storage $storage = null;
+    protected ?Validation $validation = null;
 
     public function __construct(
         string $username, 
@@ -112,6 +113,15 @@ class SignAPI
         }
 
         return $this->share;
+    }
+    
+    public function validation(): Validation
+    {
+        if ($this->validation === null) {
+            $this->validation = new Validation($this);
+        }
+
+        return $this->validation;
     }
 
     public function get(string $path, array $options = []): ResponseInterface   
