@@ -16,16 +16,18 @@ class Storage
         $this->signAPI = $signAPI;
     }
 
-    public function upload(string $sessionId, string $file): ?array
+    public function upload(string $sessionId, string $file, ?string $filename = null): ?array
     {
 
         $contents = ctype_print($file) && file_exists($file) 
                     ? Utils::tryFopen($file, 'r') 
                     : $file;
 
-        $filename = is_string($contents)
-                    ? 'file.txt'
-                    : ltrim(substr($file, strrpos($file, '/')), '/');
+        $filename = $filename ?? (
+                    is_string($contents)
+                        ? 'file.txt'
+                        : ltrim(substr($file, strrpos($file, '/')), '/')
+                    );
 
         $mimetype = is_string($contents)
                     ? 'text/plain'
