@@ -19,36 +19,37 @@ class Storage
     public function upload(string $sessionId, string $file, ?string $filename = null): ?array
     {
 
-        $contents = ctype_print($file) && file_exists($file) 
-                    ? Utils::tryFopen($file, 'r') 
+        $contents = file_exists($file)
+                    ? Utils::tryFopen($file, 'r')
                     : $file;
 
         $filename = $filename ?? (
-                    is_string($contents)
+            is_string($contents)
                         ? 'file.txt'
                         : ltrim(substr($file, strrpos($file, '/')), '/')
-                    );
+        );
 
         $mimetype = is_string($contents)
                     ? 'text/plain'
-                    : mime_content_type($file) ?? '';
+                    : (mime_content_type($file) ?: '');
 
         $response = $this->signAPI->put(static::ENDPOINT . $sessionId . '/upload', [
             'multipart' => [
                 [
-                    'name' => 'file',
+                    'name'     => 'file',
                     'filename' => $filename,
                     'contents' => $contents,
-                    'headers' => [
+                    'headers'  => [
                         'Content-Type' => $mimetype,
                     ],
-                ]
+                ],
             ],
         ]);
 
-        if ($response->getStatusCode() !== 201) 
+        if ($response->getStatusCode() !== 201) {
             return null;
-    
+        }
+
         return json_decode($response->getBody()->getContents(), true);
     }
 
@@ -56,15 +57,17 @@ class Storage
     {
         $response = $this->signAPI->get(static::ENDPOINT . $sessionId . '/list');
 
-        if ($response->getStatusCode() !== 200) 
+        if ($response->getStatusCode() !== 200) {
             return null;
-    
+        }
+
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function download(string $sessionId, string $fileId): ResponseInterface
+    public function download(string $sessionId, string $fileId, bool $asice = false): ResponseInterface
     {
-        $response = $this->signAPI->get(static::ENDPOINT . $sessionId . '/' . $fileId);
+        $options  = $asice ? ['query' => ['type' => 'asice']] : [];
+        $response = $this->signAPI->get(static::ENDPOINT . $sessionId . '/' . $fileId, $options);
         return $response;
     }
 
@@ -79,21 +82,27 @@ class Storage
         if (!array_is_list($files)) {
             $files = [
                 [
-                    'name' => $files['name'],
-                    'digest' => $files['digest'],
+                    'name'             => $files['name'],
+                    'digest'           => $files['digest'],
                     'digest_algorithm' => $files['digest_algorithm'],
                 ],
             ];
         }
 
         $response = $this->signAPI->post(static::ENDPOINT . $sessionId . '/addDocumentDigest', [
-            'files' => $files,
-            'signatureIndex' => $signatureIndex,
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+            'body' => json_encode([
+                'files'          => $files,
+                'signatureIndex' => $signatureIndex,
+            ]),
         ]);
 
-        if ($response->getStatusCode() !== 200) 
+        if ($response->getStatusCode() !== 200) {
             return null;
-    
+        }
+
         return json_decode($response->getBody()->getContents(), true);
     }
 }

@@ -1,3 +1,5 @@
 /.phpunit.cache
+/.php-cs-fixer.cache
+/.phpstan
 /vendor
 .env

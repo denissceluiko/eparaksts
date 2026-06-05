@@ -2,11 +2,11 @@
 
 namespace Dencel\Eparaksts\SignAPI\v1;
 
-use Dencel\Eparaksts\Eparaksts;
 use Dencel\Eparaksts\Traits\CanRequestTokens;
 use Dencel\Eparaksts\Traits\HasBasicAuthentication;
 use Dencel\Eparaksts\Traits\HasScopedTokens;
 use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\ResponseInterface;
 
 class SignAPI
@@ -15,34 +15,36 @@ class SignAPI
     use HasBasicAuthentication;
     use HasScopedTokens;
 
-    protected ?Client $client = null;
+    protected ?Client $client               = null;
     protected ?Configuration $configuration = null;
-    protected ?Session $session = null;
-    protected ?Share $share = null;
-    protected ?Signing $signing = null;
-    protected ?Storage $storage = null;
-    protected ?Validation $validation = null;
+    protected ?Session $session             = null;
+    protected ?Share $share                 = null;
+    protected ?Signing $signing             = null;
+    protected ?Storage $storage             = null;
+    protected ?Validation $validation       = null;
 
     public function __construct(
-        string $username, 
-        string $password, 
-        string $host = 'https://signapi.eparaksts.lv/', 
-        string $tokenHost = 'https://eidas.eparaksts.lv'
+        string $username,
+        string $password,
+        string $host = 'https://signapi.eparaksts.lv/',
+        string $tokenHost = 'https://eidas.eparaksts.lv',
+        ?HandlerStack $handlerStack = null,
     ) {
+        $this->handlerStack = $handlerStack;
         $this->init($username, $password, $host, $tokenHost);
     }
 
     public function init(
-        string $username, 
-        string $password, 
-        string $host, 
+        string $username,
+        string $password,
+        string $host,
         string $tokenHost
     ): void {
         $this->setUsername($username);
         $this->setPassword($password);
         $this->setHost($host);
         $this->setTokenHost($tokenHost);
-        $this->client = new Client();
+        $this->client = $this->createClient();
         $this->setScope(static::SCOPE_SIGNAPI);
     }
 
@@ -53,8 +55,9 @@ class SignAPI
             ['scope' => static::SCOPE_SIGNAPI]
         );
 
-        if ($token === false)
+        if ($token === false) {
             return false;
+        }
 
         $this->use($token);
         return $token;
@@ -64,7 +67,7 @@ class SignAPI
     {
         $this->setToken(
             static::SCOPE_SIGNAPI,
-            $token['bearer'], 
+            $token['bearer'],
             $token['expires']
         );
 
@@ -96,7 +99,7 @@ class SignAPI
 
         return $this->signing;
     }
-    
+
     public function configuration(): Configuration
     {
         if ($this->configuration === null) {
@@ -105,7 +108,7 @@ class SignAPI
 
         return $this->configuration;
     }
-    
+
     public function share(): Share
     {
         if ($this->share === null) {
@@ -114,7 +117,7 @@ class SignAPI
 
         return $this->share;
     }
-    
+
     public function validation(): Validation
     {
         if ($this->validation === null) {
@@ -124,17 +127,17 @@ class SignAPI
         return $this->validation;
     }
 
-    public function get(string $path, array $options = []): ResponseInterface   
+    public function get(string $path, array $options = []): ResponseInterface
     {
         return $this->request('GET', $path, $options);
     }
 
-    public function post(string $path, array $options = []): ResponseInterface   
+    public function post(string $path, array $options = []): ResponseInterface
     {
         return $this->request('POST', $path, $options);
     }
 
-    public function put(string $path, array $options = []): ResponseInterface   
+    public function put(string $path, array $options = []): ResponseInterface
     {
         return $this->request('PUT', $path, $options);
     }
@@ -144,22 +147,18 @@ class SignAPI
         return $this->request('DELETE', $path, $options);
     }
 
-    public function request(string $method, string $path, array $options = []): ResponseInterface   
+    public function request(string $method, string $path, array $options = []): ResponseInterface
     {
         $options = array_merge_recursive([
             'headers' => [
-                'accept' => 'application/json',
+                'accept'        => 'application/json',
                 'authorization' => 'Bearer ' . $this->getBearer(),
             ],
-            'http_errors' => false,
+            'connect_timeout' => 5,
+            'http_errors'     => false,
         ], $options);
 
-        $response = $this->client->request($method, $this->formEndpointURI($path), $options);
-
-        // TBI remove after dev
-        error_log($path . ': ' . $response->getStatusCode() . '; ' .json_encode($options));
-
-        return $response;
+        return $this->client->request($method, $this->formEndpointURI($path), $options);
     }
 
     protected function formEndpointURI(string $path): string

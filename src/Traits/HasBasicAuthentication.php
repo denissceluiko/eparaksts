@@ -2,12 +2,16 @@
 
 namespace Dencel\Eparaksts\Traits;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
+
 trait HasBasicAuthentication
 {
-    protected ?string $host = null;
-    protected ?string $tokenHost = null;
-    protected ?string $username = null;
-    protected ?string $password = null;
+    protected ?string $host               = null;
+    protected ?string $tokenHost          = null;
+    protected ?string $username           = null;
+    protected ?string $password           = null;
+    protected ?HandlerStack $handlerStack = null;
 
     public function getHost(): string
     {
@@ -19,7 +23,6 @@ trait HasBasicAuthentication
         $this->host = $host;
     }
 
-    
     public function getTokenHost(): string
     {
         return $this->tokenHost;
@@ -39,7 +42,7 @@ trait HasBasicAuthentication
     {
         $this->username = $username;
     }
-    
+
     public function getPassword(): string
     {
         return $this->password;
@@ -52,6 +55,18 @@ trait HasBasicAuthentication
 
     public function encodeBasicAuth(): string
     {
-        return base64_encode( urlencode($this->username) . ':' . urlencode($this->password));
+        return base64_encode($this->username . ':' . $this->password);
+    }
+
+    public function setHandlerStack(HandlerStack $handlerStack): void
+    {
+        $this->handlerStack = $handlerStack;
+    }
+
+    protected function createClient(): Client
+    {
+        return $this->handlerStack
+            ? new Client(['handler' => $this->handlerStack])
+            : new Client();
     }
 }

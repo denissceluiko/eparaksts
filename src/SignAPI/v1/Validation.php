@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Dencel\Eparaksts\SignAPI\v1;
 

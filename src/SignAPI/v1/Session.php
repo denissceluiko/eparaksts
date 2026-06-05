@@ -30,9 +30,10 @@ class Session
     {
         $response = $this->signAPI->get(static::ENDPOINT . $id . '/close');
 
-        if ($response->getStatusCode() !== 200) 
+        if ($response->getStatusCode() !== 200) {
             return null;
-    
+        }
+
         return json_decode($response->getBody()->getContents(), true);
     }
 }

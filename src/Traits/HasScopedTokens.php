@@ -4,20 +4,28 @@ namespace Dencel\Eparaksts\Traits;
 
 trait HasScopedTokens
 {
-    protected array $tokens = [];
+    protected array $tokens  = [];
     protected ?string $scope = null;
 
-    public const SCOPE_IDENTIFICATION           = 'urn:lvrtc:fpeil:aa';
-    public const SCOPE_IDENTIFICATION_WITH_AGE  = 'urn:lvrtc:fpeil:aa:age';
-    public const SCOPE_SIGNING_IDENTITY         = 'urn:safelayer:eidas:sign:identity:profile';
-    public const SCOPE_SIGNATURE                = 'urn:safelayer:eidas:sign:identity:use:server';
-    public const SCOPE_SIGNAPI                  = 'urn:safelayer:eidas:oauth:token:introspect';
+    public const SCOPE_IDENTIFICATION             = 'urn:lvrtc:fpeil:aa';
+    public const SCOPE_IDENTIFICATION_WITH_AGE    = 'urn:lvrtc:fpeil:aa:age';
+    public const SCOPE_IDENTIFICATION_WITH_AGE_14 = 'urn:lvrtc:fpeil:aa:age_14';
+    public const SCOPE_IDENTIFICATION_WITH_AGE_16 = 'urn:lvrtc:fpeil:aa:age_16';
+    public const SCOPE_IDENTIFICATION_WITH_AGE_18 = 'urn:lvrtc:fpeil:aa:age_18';
+    public const SCOPE_IDENTIFICATION_WITH_AGE_21 = 'urn:lvrtc:fpeil:aa:age_21';
+    public const SCOPE_SIGNING_IDENTITY           = 'urn:safelayer:eidas:sign:identity:profile';
+    public const SCOPE_SIGNATURE                  = 'urn:safelayer:eidas:sign:identity:use:server';
+    public const SCOPE_SIGNAPI                    = 'urn:safelayer:eidas:oauth:token:introspect';
 
     public function getValidScopes(): array
     {
         return [
             static::SCOPE_IDENTIFICATION,
             static::SCOPE_IDENTIFICATION_WITH_AGE,
+            static::SCOPE_IDENTIFICATION_WITH_AGE_14,
+            static::SCOPE_IDENTIFICATION_WITH_AGE_16,
+            static::SCOPE_IDENTIFICATION_WITH_AGE_18,
+            static::SCOPE_IDENTIFICATION_WITH_AGE_21,
             static::SCOPE_SIGNAPI,
             static::SCOPE_SIGNATURE,
             static::SCOPE_SIGNING_IDENTITY,
@@ -47,7 +55,7 @@ trait HasScopedTokens
 
     public function hasValidToken(string $scope): bool
     {
-        return $this->isValidScope($scope) 
+        return $this->isValidScope($scope)
             && !empty($this->tokens[$scope])
             && !$this->isExpired($scope);
     }
@@ -63,10 +71,11 @@ trait HasScopedTokens
 
     public function setToken(string $scope, string $bearer, int $expires): bool
     {
-        if (!$this->isValidScope($scope)) 
+        if (!$this->isValidScope($scope)) {
             return false;
-        
-        $this->tokens[$scope]['bearer'] = $bearer;
+        }
+
+        $this->tokens[$scope]['bearer']  = $bearer;
         $this->tokens[$scope]['expires'] = $expires;
 
         return true;
@@ -75,8 +84,9 @@ trait HasScopedTokens
     public function setTokens(array $tokens): void
     {
         foreach ($tokens as $scope => $token) {
-            if (empty($token['bearer']) || empty($token['expires']))
+            if (empty($token['bearer']) || empty($token['expires'])) {
                 continue;
+            }
 
             $this->setToken($scope, $token['bearer'], $token['expires']);
         }
@@ -88,7 +98,7 @@ trait HasScopedTokens
 
         foreach ($this->getValidScopes() as $scope) {
             $tokens[$scope] = [
-                'bearer' => $this->getBearer($scope),
+                'bearer'  => $this->getBearer($scope),
                 'expires' => $this->getExpiresAt($scope),
             ];
         }
@@ -108,11 +118,11 @@ trait HasScopedTokens
 
     public function getExpiresIn(?string $scope = null): ?int
     {
-        return ( $this->getToken($scope)['expires'] ?? time() ) - time();
+        return ($this->getToken($scope)['expires'] ?? time()) - time();
     }
 
     public function isExpired(?string $scope = null): bool
     {
-        return ( $this->getExpiresAt($scope) - time() ) < 0;
+        return ($this->getExpiresAt($scope) - time()) < 0;
     }
 }

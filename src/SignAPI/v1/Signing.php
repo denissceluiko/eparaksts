@@ -1,6 +1,8 @@
-<?php 
+<?php
 
 namespace Dencel\Eparaksts\SignAPI\v1;
+
+use Dencel\Eparaksts\Exception\EncryptionException;
 
 class Signing
 {
@@ -18,15 +20,15 @@ class Signing
         $formattedSessions = $this->normalizeSessions($sessions);
 
         $body = [
-            'sessions' => $formattedSessions,
-            'certificate' => $certificate,
-            'signAsPdf' => $signAsPDF,
+            'sessions'      => $formattedSessions,
+            'certificate'   => $certificate,
+            'signAsPdf'     => $signAsPDF,
             'createNewEdoc' => $createNewEdoc,
         ];
 
         $body = array_filter($body);
 
-        $response = $this->signAPI->post(static::ENDPOINT . 'calculateDigest', [
+        $response = $this->signAPI->post(static::ENDPOINT . 'CalculateDigest', [
             'headers' => [
                 'content-type' => 'application/json',
             ],
@@ -37,20 +39,12 @@ class Signing
     }
 
     /**
-     * Calls finalizeSigning endpoint.
-     * 
-     * Signatures have to be base64 encoded!!!!
-     * 
-     * Accepts signatures as: 
-     * $session, $signature
-     * ["sessionId" => 'id', "signatureValue" => 'signature']
-     * [ ["sessionId" => 'id1', "signatureValue" => 'signature1'], ["sessionId" => 'id2', "signatureValue" => 'signature2'], ...]
-     * 
+     * Signatures have to be base64 encoded.
      *
-     * @param array|string $sessions
-     * @param string|null $signature
-     * @param string $authCertificate
-     * @return array
+     * Accepts signatures as:
+     * - finalizeSigning($cert, $sessionId, $signature)
+     * - finalizeSigning($cert, ["sessionId" => 'id', "signatureValue" => 'signature'])
+     * - finalizeSigning($cert, [["sessionId" => 'id1', "signatureValue" => 'sig1'], ...])
      */
     public function finalizeSigning(string $authCertificate, array|string $sessions, ?string $signature = null): array
     {
@@ -58,16 +52,18 @@ class Signing
 
         if (is_string($sessions) && is_string($signature)) {
             $formattedSessions[] = [
-                "sessionId" => $sessions,
-                "signatureValue" => $signature,
+                'sessionId'      => $sessions,
+                'signatureValue' => $signature,
             ];
-        } elseif (is_array($sessions) && !array_is_list($sessions)) {
+        } elseif (is_array($sessions) && array_is_list($sessions)) {
+            $formattedSessions = $sessions;
+        } elseif (is_array($sessions)) {
             $formattedSessions[] = $sessions;
         }
 
         $body = [
             'sessionSignatureValues' => $formattedSessions,
-            'authCertificate' => $authCertificate,
+            'authCertificate'        => $authCertificate,
         ];
 
         $response = $this->signAPI->post(static::ENDPOINT . 'finalizeSigning', [
@@ -80,12 +76,12 @@ class Signing
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function addArchive(string $authCertificate, array|string $sessions) 
+    public function addArchive(string $authCertificate, array|string $sessions)
     {
         $formattedSessions = $this->normalizeSessions($sessions);
 
         $body = [
-            'sessions' => $formattedSessions,
+            'sessions'        => $formattedSessions,
             'authCertificate' => $authCertificate,
         ];
 
@@ -100,22 +96,22 @@ class Signing
     }
 
     public function eSealCreate(
-        string|array $sessions, 
-        string $authCertificate, 
-        string $signKey, 
-        string $signKeyPassword, 
-        bool $signAsPDF = false, 
+        string|array $sessions,
+        string $authCertificate,
+        string $signKey,
+        string $signKeyPassword,
+        bool $signAsPDF = false,
         bool $createNewEdoc = false
     ): ?array {
         $formattedSessions = $this->normalizeSessions($sessions);
 
         $body = [
-            'sessions' => $formattedSessions,
+            'sessions'        => $formattedSessions,
             'authCertificate' => $authCertificate,
-            'signKey' => $signKey,
+            'signKey'         => $signKey,
             'signKeyPassword' => $signKeyPassword,
-            'signAsPdf' => $signAsPDF,
-            'createNewEdoc' => $createNewEdoc,
+            'signAsPdf'       => $signAsPDF,
+            'createNewEdoc'   => $createNewEdoc,
         ];
 
         $response = $this->signAPI->post(static::ENDPOINT . 'eSealCreate', [
@@ -128,18 +124,28 @@ class Signing
         return json_decode($response->getBody()->getContents(), true);
     }
 
+    public function encryptSignKeyPassword(string $password): string
+    {
+        $keyData = $this->signAPI->configuration()->publicKey();
+        if (openssl_public_encrypt($password, $encrypted, $keyData['publicKey'], OPENSSL_PKCS1_OAEP_PADDING) === false) {
+            throw new EncryptionException('Failed to encrypt sign key password: ' . openssl_error_string());
+        }
+
+        return base64_encode($encrypted);
+    }
+
     protected function normalizeSessions(string|array $sessions): array
     {
         $normalized = [];
 
         if (is_string($sessions)) {
             $normalized[] = [
-                "sessionId" => $sessions,
+                'sessionId' => $sessions,
             ];
-        } elseif (is_array($sessions) && array_is_list($sessions)) {
-            foreach($sessions as $session) {
+        } elseif (array_is_list($sessions)) {
+            foreach ($sessions as $session) {
                 $normalized[] = [
-                    "sessionId" => $session,
+                    'sessionId' => $session,
                 ];
             }
         } else {

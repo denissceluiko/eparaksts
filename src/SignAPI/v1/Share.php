@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Dencel\Eparaksts\SignAPI\v1;
 
@@ -12,20 +12,23 @@ class Share
     {
         $this->signAPI = $signAPI;
     }
-    
+
     /**
      * $people should be formatted like [["personId" => "111111-11111", "accessRights" => 5], [...], ...]
      *
      * For full $people formatting rules and assess rights format refer to the docs
-     * @link https://developers.eparaksts.lv/docs/share-api 
+     * @link https://developers.eparaksts.lv/docs/share-api
      */
     public function start(string $sessionId, array $people, string $note = ''): ?array
     {
         $response = $this->signAPI->post(static::ENDPOINT . $sessionId . '/persons', [
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
             'body' => json_encode([
                 'persons' => $people,
-                'note' => $note,
-            ])
+                'note'    => $note,
+            ]),
         ]);
         return json_decode($response->getBody()->getContents(), true);
     }
@@ -43,7 +46,7 @@ class Share
     }
 
     /**
-     * Docs say person id shoul be fromatted like XXXXXX-YYYYY
+     * Docs say person id should be formatted like XXXXXX-YYYYY
      * Why not PNOLV-XXXXXX-YYYYY? Who knows, be careful.
      */
     public function sessions(string $personId): ?array

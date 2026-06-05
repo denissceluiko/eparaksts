@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Dencel\Eparaksts\SignAPI\v1;
 
@@ -16,17 +16,18 @@ class Configuration
     public function get(?string $key = null): null|array|string
     {
         $response = $this->signAPI->get(static::ENDPOINT);
-        $data = json_decode($response->getBody()->getContents(), true);
+        $data     = json_decode($response->getBody()->getContents(), true);
 
-        if (empty($data)) 
+        if (empty($data)) {
             return null;
+        }
 
         return empty($key) ? $data : ($data[$key] ?? null);
     }
-    
+
     public function publicKey(): ?array
     {
-        $response = $this->signAPI->get(static::ENDPOINT . '/public/key');
+        $response = $this->signAPI->get(static::ENDPOINT . 'public/key');
         return json_decode($response->getBody()->getContents(), true);
     }
 }

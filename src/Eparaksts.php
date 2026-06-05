@@ -5,7 +5,7 @@ namespace Dencel\Eparaksts;
 use Dencel\Eparaksts\Traits\CanRequestTokens;
 use Dencel\Eparaksts\Traits\HasBasicAuthentication;
 use Dencel\Eparaksts\Traits\HasScopedTokens;
-use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\ResponseInterface;
 
 class Eparaksts
@@ -16,28 +16,31 @@ class Eparaksts
 
     protected ?ResponseInterface $response = null;
 
-    public const ACR_MOBILEID                   = 'urn:eparaksts:authentication:flow:mobileid';
-    public const ACR_SC_PLUGIN                  = 'urn:eparaksts:authentication:flow:sc_plugin';
-    public const ACR_MOBILEID_CROSS             = 'urn:eparaksts:authentication:flow:mobileid:cross-device';
-    public const ACR_MOBILE_EID                 = 'urn:eparaksts:authentication:flow:mobile-eid';
+    public const ACR_MOBILEID       = 'urn:eparaksts:authentication:flow:mobileid';
+    public const ACR_SC_PLUGIN      = 'urn:eparaksts:authentication:flow:sc_plugin';
+    public const ACR_MOBILEID_CROSS = 'urn:eparaksts:authentication:flow:mobileid:cross-device';
+    public const ACR_MOBILE_EID     = 'urn:eparaksts:authentication:flow:mobile-eid';
 
-    public const CERT_MOBILEID_AUTH             = 'mobileid:auth';
-    public const CERT_MOBILEID_SIGN             = 'mobileid:sign';
-    public const CERT_SIGNING                   = 'signing';
+    public const CERT_MOBILEID_AUTH = 'mobileid:auth';
+    public const CERT_MOBILEID_SIGN = 'mobileid:sign';
+    public const CERT_SIGNING       = 'signing';
+    public const CERT_QSEAL         = 'qseal';
 
     public function __construct(
-        string $username, 
-        string $password, 
-        string $host = 'https://eidas.eparaksts.lv', 
+        string $username,
+        string $password,
+        string $host = 'https://eidas.eparaksts.lv',
+        ?HandlerStack $handlerStack = null,
     ) {
+        $this->handlerStack = $handlerStack;
         $this->init($username, $password, $host);
     }
 
     public function init(string $username, string $password, string $host): void
     {
-        if ($username === $this->username 
-            && $password === $this->password 
-            && $host === $this->host
+        if ($username    === $this->username
+            && $password === $this->password
+            && $host     === $this->host
         ) {
             return;
         }
@@ -54,15 +57,15 @@ class Eparaksts
 
         $params = array_merge([
             'response_type' => 'code',
-            'client_id' => $this->getUsername(),
-            'scope' => $this->getScope(),
-            'state' => $state,
-            'redirect_url' => $redirect,
+            'client_id'     => $this->getUsername(),
+            'scope'         => $this->getScope(),
+            'state'         => $state,
+            'redirect_uri'  => $redirect,
         ], $data);
 
         $query = http_build_query(array_filter($params));
 
-        $uri = $this->host.'/trustedx-authserver/oauth/lvrtc-eipsign-as?'.$query;
+        $uri = $this->host . '/trustedx-authserver/oauth/lvrtc-eipsign-as?' . $query;
         return $uri;
     }
 
@@ -80,74 +83,109 @@ class Eparaksts
             'redirect_uri' => $redirect,
         ]);
 
-        return $this->host.'/trustedx-authserver/lvrtc-eipsign-idp/logout?'.$query;
+        return $this->host . '/trustedx-authserver/lvrtc-eipsign-idp/logout?' . $query;
     }
 
     public function me(?string $scope = null): array
     {
-        $client = new Client();
+        $client = $this->createClient();
 
-        $this->response = $client->request('POST', $this->getHost().'/trustedx-resources/openid/v1/users/me', [
+        $this->response = $client->request('GET', $this->getHost() . '/trustedx-resources/openid/v1/users/me', [
             'headers' => [
-                'accept' => 'application/json',
+                'accept'        => 'application/json',
                 'authorization' => 'Bearer ' . $this->getBearer($scope),
             ],
             'connect_timeout' => 5,
-            'http_errors' => false,
+            'http_errors'     => false,
         ]);
 
-        if ($this->response->getStatusCode() !== 200) 
+        if ($this->response->getStatusCode() !== 200) {
             return [];
+        }
 
         return json_decode($this->response->getBody()->getContents(), true);
     }
 
     public function getSignIdentity(string $id): array
     {
-        $client = new Client();
+        $client = $this->createClient();
 
-        $this->response = $client->request('GET', $this->getHost().'/trustedx-resources/esigp/v1/sign_identities/'.$id, [
+        $this->response = $client->request('GET', $this->getHost() . '/trustedx-resources/esigp/v1/sign_identities/' . $id, [
             'headers' => [
-                'accept' => 'application/json',
+                'accept'        => 'application/json',
                 'authorization' => 'Bearer ' . $this->getBearer(static::SCOPE_SIGNING_IDENTITY),
             ],
             'connect_timeout' => 5,
-            'http_errors' => false,
+            'http_errors'     => false,
         ]);
 
-        if ($this->response->getStatusCode() !== 200) 
+        if ($this->response->getStatusCode() !== 200) {
             return [];
+        }
 
         return json_decode($this->response->getBody()->getContents(), true);
     }
 
     public function sign(string $digest, string $signatureAlgo, string $signIdentity): ?string
     {
-        $client = new Client();
+        if (!in_array($signatureAlgo, ['rsa-sha1', 'rsa-sha256', 'rsa-sha384', 'rsa-sha512', 'ecdsa'])) {
+            return null;
+        }
 
-        $signatureAlgo = ($signatureAlgo == 'ecdsa' ? 'ecdsa' : 'rsa-sha256');
+        $client = $this->createClient();
 
         $body = [
-            'digest_value' => $digest,
+            'digest_value'        => $digest,
             'signature_algorithm' => $signatureAlgo,
-            'sign_identity_id' => $signIdentity,
+            'sign_identity_id'    => $signIdentity,
         ];
 
-        $this->response = $client->request('POST', $this->getHost().'/trustedx-resources/esigp/v1/signatures/server/raw', [
+        $this->response = $client->request('POST', $this->getHost() . '/trustedx-resources/esigp/v1/signatures/server/raw', [
             'headers' => [
-                'Content-Type' => 'application/json',
+                'Content-Type'  => 'application/json',
                 'authorization' => 'Bearer ' . $this->getBearer(static::SCOPE_SIGNATURE),
             ],
-            'body' => json_encode($body),
+            'body'            => json_encode($body),
             'connect_timeout' => 5,
-            'http_errors' => false,
+            'http_errors'     => false,
         ]);
 
         if ($this->response->getStatusCode() !== 200) {
             return null;
         }
 
-         return $this->response->getBody()->getContents();
+        return $this->response->getBody()->getContents();
+    }
+
+    public function signBatch(array $requests, string $signatureAlgo, string $signIdentity): ?array
+    {
+        if (!in_array($signatureAlgo, ['rsa-sha1', 'rsa-sha256', 'rsa-sha384', 'rsa-sha512', 'ecdsa'])) {
+            return null;
+        }
+
+        $client = $this->createClient();
+
+        $body = [
+            'sign_identity_id'    => $signIdentity,
+            'signature_algorithm' => $signatureAlgo,
+            'requests'            => $requests,
+        ];
+
+        $this->response = $client->request('POST', $this->getHost() . '/trustedx-resources/esigp/v1/signatures/server/raw/batch', [
+            'headers' => [
+                'Content-Type'  => 'application/json',
+                'authorization' => 'Bearer ' . $this->getBearer(static::SCOPE_SIGNATURE),
+            ],
+            'body'            => json_encode($body),
+            'connect_timeout' => 5,
+            'http_errors'     => false,
+        ]);
+
+        if ($this->response->getStatusCode() !== 200) {
+            return null;
+        }
+
+        return json_decode($this->response->getBody()->getContents(), true);
     }
 
     public function findIdentity(string $type, array $identities): ?array
@@ -156,18 +194,23 @@ class Eparaksts
             static::CERT_MOBILEID_AUTH,
             static::CERT_MOBILEID_SIGN,
             static::CERT_SIGNING,
-        ])) return null;
+            static::CERT_QSEAL,
+        ])) {
+            return null;
+        }
 
-         $types = [
+        $types = [
             static::CERT_MOBILEID_AUTH => ['labels' => ['mobileid', 'x509:keyUsage:digitalSignature'],  'description' => 'eparaksts:mobileid:auth'],
             static::CERT_MOBILEID_SIGN => ['labels' => ['mobileid', 'x509:keyUsage:contentCommitment'], 'description' => 'eparaksts:mobileid:sign'],
-            static::CERT_SIGNING => ['labels' => ['serverid']],
+            static::CERT_SIGNING       => ['labels' => ['serverid']],
+            static::CERT_QSEAL         => ['labels' => ['qsealc', 'x509:keyUsage:contentCommitment'],   'description' => 'eparaksts:qsealc:sign'],
         ];
 
         $identities = $this->filterIdentities($identities, $types[$type]);
-        
-        if (empty($identities))
+
+        if (empty($identities)) {
             return null;
+        }
 
         return $identities[0];
     }
@@ -183,26 +226,25 @@ class Eparaksts
         $filtered = [];
 
         foreach ($identities as $identity) {
-            foreach ($needles as $key => $value) {
-                if (empty($identity[$key])){
-                    continue;
-                }
-
-                if (is_string($value) && $identity[$key] !== $value) {
-                    continue;
-                }
-
-                if (is_array($value) && count(array_intersect($identity[$key], $value)) != count($value)) {
-                    continue;
-                }
-
-                $filtered[] = $identity;
-            }
-
-            if (empty($identity['status']) || $identity['status']['value'] != 'enabled'){
+            if (empty($identity['status']) || $identity['status']['value'] != 'enabled') {
                 continue;
             }
 
+            foreach ($needles as $key => $value) {
+                if (empty($identity[$key])) {
+                    continue 2;
+                }
+
+                if (is_string($value) && $identity[$key] !== $value) {
+                    continue 2;
+                }
+
+                if (is_array($value) && count(array_intersect($identity[$key], $value)) != count($value)) {
+                    continue 2;
+                }
+            }
+
+            $filtered[] = $identity;
         }
 
         return $filtered;
@@ -215,9 +257,7 @@ class Eparaksts
 
     public function isAuthenticated(?string $scope = null): bool
     {
-        return !empty($this->getToken($scope)['bearer']) && 
-            $this->getToken($scope)['expires'] !== null && 
-            !$this->isExpired($scope);
+        return !empty($this->getToken($scope)['bearer']) && $this->getToken($scope)['expires'] !== null && !$this->isExpired($scope);
     }
 
     public function __serialize(): array
