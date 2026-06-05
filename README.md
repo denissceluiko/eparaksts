@@ -1,6 +1,6 @@
 # dencel/eparaksts
 
-PHP 8.2+ client library for the [eParaksts](https://www.eparaksts.lv/) Latvian e-signature and identity platform.
+PHP 8.4+ client library for the [eParaksts](https://www.eparaksts.lv/) Latvian e-signature and identity platform.
 
 ## Installation
 
@@ -203,7 +203,7 @@ foreach ($container as $tx) {
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.4+
 - `ext-fileinfo`, `ext-openssl`
 
 ## License
