@@ -13,6 +13,13 @@ class Validation
         $this->signAPI = $signAPI;
     }
 
+    /**
+     * Validate the signatures on a document in the session.
+     *
+     * @param  string     $sessionId Session ID.
+     * @param  string     $fileId    File ID.
+     * @return array|null Validation result, or null on failure.
+     */
     public function validate(string $sessionId, string $fileId): ?array
     {
         $response = $this->signAPI->get(static::ENDPOINT . $sessionId . '/' . $fileId . '/validate');

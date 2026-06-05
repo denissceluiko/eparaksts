@@ -21,7 +21,7 @@
         }
     },
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.4",
         "ext-fileinfo": "*",
         "ext-openssl": "*",
         "guzzlehttp/guzzle": "^7.10",

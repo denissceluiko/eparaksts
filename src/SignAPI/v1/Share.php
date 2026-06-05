@@ -14,9 +14,12 @@ class Share
     }
 
     /**
-     * $people should be formatted like [["personId" => "111111-11111", "accessRights" => 5], [...], ...]
+     * Share a session with other persons.
      *
-     * For full $people formatting rules and assess rights format refer to the docs
+     * @param  string     $sessionId Session ID.
+     * @param  array      $people    List of person arrays, each with 'personId' (XXXXXX-YYYYY format) and 'accessRights'.
+     * @param  string     $note      Optional note for the recipients.
+     * @return array|null Response body, or null on failure.
      * @link https://developers.eparaksts.lv/docs/share-api
      */
     public function start(string $sessionId, array $people, string $note = ''): ?array
@@ -33,12 +36,25 @@ class Share
         return json_decode($response->getBody()->getContents(), true);
     }
 
+    /**
+     * Remove a person's access to a shared session.
+     *
+     * @param  string     $sessionId Session ID.
+     * @param  string     $personId  Latvian personal number in XXXXXX-YYYYY format.
+     * @return array|null Response body, or null on failure.
+     */
     public function delete(string $sessionId, string $personId): ?array
     {
         $response = $this->signAPI->delete(static::ENDPOINT . $sessionId . '/persons/' . $personId);
         return json_decode($response->getBody()->getContents(), true);
     }
 
+    /**
+     * List persons who have access to a session.
+     *
+     * @param  string     $sessionId Session ID.
+     * @return array|null List of persons, or null on failure.
+     */
     public function persons(string $sessionId): ?array
     {
         $response = $this->signAPI->get(static::ENDPOINT . $sessionId . '/persons');
@@ -46,8 +62,12 @@ class Share
     }
 
     /**
-     * Docs say person id should be formatted like XXXXXX-YYYYY
-     * Why not PNOLV-XXXXXX-YYYYY? Who knows, be careful.
+     * List sessions shared with a person.
+     *
+     * Note: personId must be in XXXXXX-YYYYY format, not the PNOLV-XXXXXX-YYYYY format used elsewhere.
+     *
+     * @param  string     $personId Latvian personal number in XXXXXX-YYYYY format.
+     * @return array|null List of sessions, or null on failure.
      */
     public function sessions(string $personId): ?array
     {

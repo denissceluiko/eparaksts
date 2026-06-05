@@ -51,6 +51,15 @@ class Eparaksts
         $this->setTokenHost($host);
     }
 
+    /**
+     * Build the authorization URL to redirect the user's browser to.
+     *
+     * @param  string      $scope    One of the SCOPE_* constants.
+     * @param  string      $state    Random CSRF token; verify on callback.
+     * @param  string      $redirect Callback URL registered with eParaksts.
+     * @param  array|null  $data     Extra query params (e.g. ['acr_values' => ..., 'ui_locales' => 'lv']).
+     * @return string Authorization URL.
+     */
     public function authorize(string $scope, string $state, string $redirect = '', ?array $data = []): ?string
     {
         $this->setScope($scope);
@@ -69,6 +78,11 @@ class Eparaksts
         return $uri;
     }
 
+    /**
+     * Obtain a client_credentials token scoped to SCOPE_SIGNAPI for use with SignAPI.
+     *
+     * @return false|array Token array with 'bearer' and 'expires', or false on failure.
+     */
     public function signAPIToken(): false|array
     {
         return $this->requestToken(
@@ -77,6 +91,12 @@ class Eparaksts
         );
     }
 
+    /**
+     * Build the logout URL to redirect the user's browser to.
+     *
+     * @param  string $redirect URL to redirect to after logout.
+     * @return string Logout URL.
+     */
     public function logout(string $redirect = ''): ?string
     {
         $query = http_build_query([
@@ -86,6 +106,12 @@ class Eparaksts
         return $this->host . '/trustedx-authserver/lvrtc-eipsign-idp/logout?' . $query;
     }
 
+    /**
+     * Fetch the authenticated user's profile and sign_identities.
+     *
+     * @param  string|null $scope Scope whose bearer token to use; defaults to the current scope.
+     * @return array Decoded JSON body, or empty array on failure.
+     */
     public function me(?string $scope = null): array
     {
         $client = $this->createClient();
@@ -106,6 +132,12 @@ class Eparaksts
         return json_decode($this->response->getBody()->getContents(), true);
     }
 
+    /**
+     * Fetch a single sign identity by its ID.
+     *
+     * @param  string $id Sign identity ID.
+     * @return array Decoded JSON body, or empty array on failure.
+     */
     public function getSignIdentity(string $id): array
     {
         $client = $this->createClient();
@@ -126,6 +158,14 @@ class Eparaksts
         return json_decode($this->response->getBody()->getContents(), true);
     }
 
+    /**
+     * Sign a single digest server-side.
+     *
+     * @param  string      $digest        Base64-encoded digest value.
+     * @param  string      $signatureAlgo One of: rsa-sha1, rsa-sha256, rsa-sha384, rsa-sha512, ecdsa.
+     * @param  string      $signIdentity  Sign identity ID from findIdentity()['id'].
+     * @return string|null Base64-encoded signature, or null on invalid algorithm or request failure.
+     */
     public function sign(string $digest, string $signatureAlgo, string $signIdentity): ?string
     {
         if (!in_array($signatureAlgo, ['rsa-sha1', 'rsa-sha256', 'rsa-sha384', 'rsa-sha512', 'ecdsa'])) {
@@ -157,6 +197,16 @@ class Eparaksts
         return $this->response->getBody()->getContents();
     }
 
+    /**
+     * Sign multiple digests in a single server-side batch call.
+     *
+     * Each request must contain a 'digest_value' key; 'signature_algorithm' is optional per-item.
+     *
+     * @param  array      $requests      List of digest request arrays.
+     * @param  string     $signatureAlgo Default algorithm for the batch.
+     * @param  string     $signIdentity  Sign identity ID from findIdentity()['id'].
+     * @return array|null List of signature results, or null on invalid algorithm or request failure.
+     */
     public function signBatch(array $requests, string $signatureAlgo, string $signIdentity): ?array
     {
         if (!in_array($signatureAlgo, ['rsa-sha1', 'rsa-sha256', 'rsa-sha384', 'rsa-sha512', 'ecdsa'])) {
@@ -188,6 +238,13 @@ class Eparaksts
         return json_decode($this->response->getBody()->getContents(), true);
     }
 
+    /**
+     * Return the first enabled identity matching $type from the sign_identities list.
+     *
+     * @param  string     $type       One of the CERT_* constants.
+     * @param  array      $identities The sign_identities array from me().
+     * @return array|null First matching identity, or null if none found or type is unknown.
+     */
     public function findIdentity(string $type, array $identities): ?array
     {
         if (!in_array($type, [
@@ -215,13 +272,30 @@ class Eparaksts
         return $identities[0];
     }
 
+    /**
+     * Return the PEM certificate for the first enabled identity matching $type.
+     *
+     * @param  string      $type       One of the CERT_* constants.
+     * @param  array       $identities The sign_identities array from me().
+     * @return string|null PEM certificate string, or null if not found.
+     */
     public function findCert(string $type, array $identities): ?string
     {
         $identity = $this->findIdentity($type, $identities);
         return !is_null($identity) ? $identity['details']['certificate'] : null;
     }
 
-    protected function filterIdentities(array $identities, array $needles): array
+    /**
+     * Filter sign_identities to those that are enabled and match all given needle key/value pairs.
+     *
+     * String needle values require an exact match; array needle values require all elements to be present.
+     * Use this directly when you need all matching identities (e.g. qseal with multiple organisations).
+     *
+     * @param  array $identities The sign_identities array from me().
+     * @param  array $needles    Map of identity field names to required values.
+     * @return array Matching enabled identities.
+     */
+    public function filterIdentities(array $identities, array $needles): array
     {
         $filtered = [];
 
@@ -250,11 +324,17 @@ class Eparaksts
         return $filtered;
     }
 
+    /** @return ResponseInterface|null The raw response from the last API call. */
     public function getResponse(): ?ResponseInterface
     {
         return $this->response;
     }
 
+    /**
+     * Check whether the current (or given) scope has a valid, non-expired bearer token.
+     *
+     * @param  string|null $scope Scope to check; defaults to the current scope.
+     */
     public function isAuthenticated(?string $scope = null): bool
     {
         return !empty($this->getToken($scope)['bearer']) && $this->getToken($scope)['expires'] !== null && !$this->isExpired($scope);

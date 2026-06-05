@@ -2,6 +2,7 @@
 
 namespace Dencel\Eparaksts\Tests\SignAPI;
 
+use Dencel\Eparaksts\Exception\ApiException;
 use Dencel\Eparaksts\SignAPI\v1\SignAPI;
 use Dencel\Eparaksts\SignAPI\v1\Signing;
 use GuzzleHttp\Handler\MockHandler;
@@ -57,6 +58,15 @@ class SigningTest extends TestCase
         $this->assertArrayNotHasKey('createNewEdoc', $body);
     }
 
+    public function testCalculateDigestThrowsOnNon2xx(): void
+    {
+        $api = $this->make([new Response(422, [], 'invalid certificate')]);
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessageMatches('/422/');
+        $api->signing()->calculateDigest('sess', 'cert');
+    }
+
     // --- finalizeSigning ---
 
     public function testFinalizeSigningWithTwoStrings(): void
@@ -99,6 +109,15 @@ class SigningTest extends TestCase
         $this->assertSame('s2', $body['sessionSignatureValues'][1]['sessionId']);
     }
 
+    public function testFinalizeSigningThrowsOnNon2xx(): void
+    {
+        $api = $this->make([new Response(400, [], 'bad request')]);
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessageMatches('/400/');
+        $api->signing()->finalizeSigning('cert', 'sess', 'sig');
+    }
+
     // --- addArchive ---
 
     public function testAddArchiveSendsCorrectBody(): void
@@ -111,6 +130,15 @@ class SigningTest extends TestCase
         $body = json_decode($container[0]['request']->getBody()->getContents(), true);
         $this->assertSame('auth-cert', $body['authCertificate']);
         $this->assertSame([['sessionId' => 'sess-id']], $body['sessions']);
+    }
+
+    public function testAddArchiveThrowsOnNon2xx(): void
+    {
+        $api = $this->make([new Response(500, [], 'server error')]);
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessageMatches('/500/');
+        $api->signing()->addArchive('cert', 'sess');
     }
 
     // --- normalizeSessions ---
@@ -150,5 +178,14 @@ class SigningTest extends TestCase
         $this->assertSame('auth-cert', $body['authCertificate']);
         $this->assertSame('pfx-base64', $body['signKey']);
         $this->assertSame('enc-pass', $body['signKeyPassword']);
+    }
+
+    public function testESealCreateThrowsOnNon2xx(): void
+    {
+        $api = $this->make([new Response(403, [], 'forbidden')]);
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessageMatches('/403/');
+        $api->signing()->eSealCreate('sess', 'cert', 'pfx', 'pass');
     }
 }
