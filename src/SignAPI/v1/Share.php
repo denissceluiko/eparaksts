@@ -16,9 +16,9 @@ class Share
     /**
      * Share a session with other persons.
      *
-     * @param  string     $sessionId Session ID.
-     * @param  array      $people    List of person arrays, each with 'personId' (XXXXXX-YYYYY format) and 'accessRights'.
-     * @param  string     $note      Optional note for the recipients.
+     * @param string $sessionId Session ID.
+     * @param array $people List of person arrays, each with 'personId' (XXXXXX-YYYYY format) and 'accessRights'.
+     * @param string $note Optional note for the recipients.
      * @return array|null Response body, or null on failure.
      * @link https://developers.eparaksts.lv/docs/share-api
      */
@@ -39,8 +39,8 @@ class Share
     /**
      * Remove a person's access to a shared session.
      *
-     * @param  string     $sessionId Session ID.
-     * @param  string     $personId  Latvian personal number in XXXXXX-YYYYY format.
+     * @param string $sessionId Session ID.
+     * @param string $personId Latvian personal number in XXXXXX-YYYYY format.
      * @return array|null Response body, or null on failure.
      */
     public function delete(string $sessionId, string $personId): ?array
@@ -52,7 +52,7 @@ class Share
     /**
      * List persons who have access to a session.
      *
-     * @param  string     $sessionId Session ID.
+     * @param string $sessionId Session ID.
      * @return array|null List of persons, or null on failure.
      */
     public function persons(string $sessionId): ?array
@@ -66,7 +66,7 @@ class Share
      *
      * Note: personId must be in XXXXXX-YYYYY format, not the PNOLV-XXXXXX-YYYYY format used elsewhere.
      *
-     * @param  string     $personId Latvian personal number in XXXXXX-YYYYY format.
+     * @param string $personId Latvian personal number in XXXXXX-YYYYY format.
      * @return array|null List of sessions, or null on failure.
      */
     public function sessions(string $personId): ?array

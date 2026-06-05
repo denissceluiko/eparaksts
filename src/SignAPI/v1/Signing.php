@@ -19,11 +19,11 @@ class Signing
     /**
      * Calculate the digest to be signed for documents in the session.
      *
-     * @param  array|string $sessions       Session ID string, or list of session ID strings.
-     * @param  string       $certificate    PEM signing certificate (from Eparaksts::findCert()).
-     * @param  bool         $signAsPDF      Sign as PAdES rather than XAdES/CAdES.
-     * @param  bool|null    $createNewEdoc  Create a new .edoc container; null omits the parameter.
-     * @return array        Digest response containing 'digestValue' and 'signatureAlgorithm'.
+     * @param array|string $sessions Session ID string, or list of session ID strings.
+     * @param string $certificate PEM signing certificate (from Eparaksts::findCert()).
+     * @param bool $signAsPDF Sign as PAdES rather than XAdES/CAdES.
+     * @param bool|null $createNewEdoc Create a new .edoc container; null omits the parameter.
+     * @return array Digest response containing 'digestValue' and 'signatureAlgorithm'.
      * @throws ApiException On a non-2xx response.
      */
     public function calculateDigest(array|string $sessions, string $certificate, bool $signAsPDF = false, ?bool $createNewEdoc = null): array
@@ -64,10 +64,10 @@ class Signing
      *
      * The signature must be base64-encoded.
      *
-     * @param  string       $authCertificate Auth certificate (from Eparaksts::findCert()).
-     * @param  array|string $sessions        Session ID, assoc array, or list of assoc arrays.
-     * @param  string|null  $signature       Base64-encoded signature (only when $sessions is a string).
-     * @return array        Response body.
+     * @param string $authCertificate Auth certificate (from Eparaksts::findCert()).
+     * @param array|string $sessions Session ID, assoc array, or list of assoc arrays.
+     * @param string|null $signature Base64-encoded signature (only when $sessions is a string).
+     * @return array Response body.
      * @throws ApiException On a non-2xx response.
      */
     public function finalizeSigning(string $authCertificate, array|string $sessions, ?string $signature = null): array
@@ -108,9 +108,9 @@ class Signing
     /**
      * Add an archive timestamp to signed documents in the session.
      *
-     * @param  string       $authCertificate Auth certificate (from Eparaksts::findCert()).
-     * @param  array|string $sessions        Session ID string or list of session ID strings.
-     * @return array        Response body.
+     * @param string $authCertificate Auth certificate (from Eparaksts::findCert()).
+     * @param array|string $sessions Session ID string or list of session ID strings.
+     * @return array Response body.
      * @throws ApiException On a non-2xx response.
      */
     public function addArchive(string $authCertificate, array|string $sessions): array
@@ -142,13 +142,13 @@ class Signing
      *
      * Encrypt the PFX password with encryptSignKeyPassword() before passing it.
      *
-     * @param  string|array $sessions         Session ID string or list of session ID strings.
-     * @param  string       $authCertificate  Auth certificate (from Eparaksts::findCert()).
-     * @param  string       $signKey          Base64-encoded PFX file contents.
-     * @param  string       $signKeyPassword  RSA-OAEP encrypted PFX password (from encryptSignKeyPassword()).
-     * @param  bool         $signAsPDF        Sign as PAdES rather than XAdES/CAdES.
-     * @param  bool         $createNewEdoc    Create a new .edoc container.
-     * @return array        Response body.
+     * @param string|array $sessions Session ID string or list of session ID strings.
+     * @param string $authCertificate Auth certificate (from Eparaksts::findCert()).
+     * @param string $signKey Base64-encoded PFX file contents.
+     * @param string $signKeyPassword RSA-OAEP encrypted PFX password (from encryptSignKeyPassword()).
+     * @param bool $signAsPDF Sign as PAdES rather than XAdES/CAdES.
+     * @param bool $createNewEdoc Create a new .edoc container.
+     * @return array Response body.
      * @throws ApiException On a non-2xx response.
      */
     public function eSealCreate(
@@ -188,7 +188,7 @@ class Signing
     /**
      * Encrypt a PFX password with the SignAPI RSA public key (OAEP padding) for use in eSealCreate().
      *
-     * @param  string $password Plaintext PFX password.
+     * @param string $password Plaintext PFX password.
      * @return string Base64-encoded encrypted password.
      * @throws EncryptionException If encryption fails.
      */

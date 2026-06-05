@@ -54,10 +54,10 @@ class Eparaksts
     /**
      * Build the authorization URL to redirect the user's browser to.
      *
-     * @param  string      $scope    One of the SCOPE_* constants.
-     * @param  string      $state    Random CSRF token; verify on callback.
-     * @param  string      $redirect Callback URL registered with eParaksts.
-     * @param  array|null  $data     Extra query params (e.g. ['acr_values' => ..., 'ui_locales' => 'lv']).
+     * @param string $scope One of the SCOPE_* constants.
+     * @param string $state Random CSRF token; verify on callback.
+     * @param string $redirect Callback URL registered with eParaksts.
+     * @param array|null $data Extra query params (e.g. ['acr_values' => ..., 'ui_locales' => 'lv']).
      * @return string Authorization URL.
      */
     public function authorize(string $scope, string $state, string $redirect = '', ?array $data = []): ?string
@@ -94,7 +94,7 @@ class Eparaksts
     /**
      * Build the logout URL to redirect the user's browser to.
      *
-     * @param  string $redirect URL to redirect to after logout.
+     * @param string $redirect URL to redirect to after logout.
      * @return string Logout URL.
      */
     public function logout(string $redirect = ''): ?string
@@ -109,7 +109,7 @@ class Eparaksts
     /**
      * Fetch the authenticated user's profile and sign_identities.
      *
-     * @param  string|null $scope Scope whose bearer token to use; defaults to the current scope.
+     * @param string|null $scope Scope whose bearer token to use; defaults to the current scope.
      * @return array Decoded JSON body, or empty array on failure.
      */
     public function me(?string $scope = null): array
@@ -135,7 +135,7 @@ class Eparaksts
     /**
      * Fetch a single sign identity by its ID.
      *
-     * @param  string $id Sign identity ID.
+     * @param string $id Sign identity ID.
      * @return array Decoded JSON body, or empty array on failure.
      */
     public function getSignIdentity(string $id): array
@@ -161,9 +161,9 @@ class Eparaksts
     /**
      * Sign a single digest server-side.
      *
-     * @param  string      $digest        Base64-encoded digest value.
-     * @param  string      $signatureAlgo One of: rsa-sha1, rsa-sha256, rsa-sha384, rsa-sha512, ecdsa.
-     * @param  string      $signIdentity  Sign identity ID from findIdentity()['id'].
+     * @param string $digest Base64-encoded digest value.
+     * @param string $signatureAlgo One of: rsa-sha1, rsa-sha256, rsa-sha384, rsa-sha512, ecdsa.
+     * @param string $signIdentity Sign identity ID from findIdentity()['id'].
      * @return string|null Base64-encoded signature, or null on invalid algorithm or request failure.
      */
     public function sign(string $digest, string $signatureAlgo, string $signIdentity): ?string
@@ -202,9 +202,9 @@ class Eparaksts
      *
      * Each request must contain a 'digest_value' key; 'signature_algorithm' is optional per-item.
      *
-     * @param  array      $requests      List of digest request arrays.
-     * @param  string     $signatureAlgo Default algorithm for the batch.
-     * @param  string     $signIdentity  Sign identity ID from findIdentity()['id'].
+     * @param array $requests List of digest request arrays.
+     * @param string $signatureAlgo Default algorithm for the batch.
+     * @param string $signIdentity Sign identity ID from findIdentity()['id'].
      * @return array|null List of signature results, or null on invalid algorithm or request failure.
      */
     public function signBatch(array $requests, string $signatureAlgo, string $signIdentity): ?array
@@ -241,8 +241,8 @@ class Eparaksts
     /**
      * Return the first enabled identity matching $type from the sign_identities list.
      *
-     * @param  string     $type       One of the CERT_* constants.
-     * @param  array      $identities The sign_identities array from me().
+     * @param string $type One of the CERT_* constants.
+     * @param array $identities The sign_identities array from me().
      * @return array|null First matching identity, or null if none found or type is unknown.
      */
     public function findIdentity(string $type, array $identities): ?array
@@ -275,8 +275,8 @@ class Eparaksts
     /**
      * Return the PEM certificate for the first enabled identity matching $type.
      *
-     * @param  string      $type       One of the CERT_* constants.
-     * @param  array       $identities The sign_identities array from me().
+     * @param string $type One of the CERT_* constants.
+     * @param array $identities The sign_identities array from me().
      * @return string|null PEM certificate string, or null if not found.
      */
     public function findCert(string $type, array $identities): ?string
@@ -291,8 +291,8 @@ class Eparaksts
      * String needle values require an exact match; array needle values require all elements to be present.
      * Use this directly when you need all matching identities (e.g. qseal with multiple organisations).
      *
-     * @param  array $identities The sign_identities array from me().
-     * @param  array $needles    Map of identity field names to required values.
+     * @param array $identities The sign_identities array from me().
+     * @param array $needles Map of identity field names to required values.
      * @return array Matching enabled identities.
      */
     public function filterIdentities(array $identities, array $needles): array
@@ -333,7 +333,7 @@ class Eparaksts
     /**
      * Check whether the current (or given) scope has a valid, non-expired bearer token.
      *
-     * @param  string|null $scope Scope to check; defaults to the current scope.
+     * @param string|null $scope Scope to check; defaults to the current scope.
      */
     public function isAuthenticated(?string $scope = null): bool
     {

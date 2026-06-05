@@ -16,7 +16,7 @@ class Session
     /**
      * Start one or more signing sessions.
      *
-     * @param  int        $amount Number of sessions to create (default 1).
+     * @param int $amount Number of sessions to create (default 1).
      * @return array|null Array containing 'sessionId' (or a list for amount > 1), or null on failure.
      */
     public function start(int $amount = 1): ?array
@@ -35,7 +35,7 @@ class Session
     /**
      * Close a signing session, discarding any uploaded documents.
      *
-     * @param  string     $id Session ID.
+     * @param string $id Session ID.
      * @return array|null Response body, or null on failure.
      */
     public function close(string $id): ?array

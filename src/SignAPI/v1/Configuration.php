@@ -16,8 +16,8 @@ class Configuration
     /**
      * Get the client configuration from the API.
      *
-     * @param  string|null        $key Return only this key; returns the full array when null.
-     * @return array|string|null  Config value, full config array, or null if the key is missing or the response is empty.
+     * @param string|null $key Return only this key; returns the full array when null.
+     * @return array|string|null Config value, full config array, or null if the key is missing or the response is empty.
      */
     public function get(?string $key = null): null|array|string
     {

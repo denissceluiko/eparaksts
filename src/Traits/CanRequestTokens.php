@@ -12,8 +12,8 @@ trait CanRequestTokens
      *
      * On success, the token is stored internally per-scope and returned.
      *
-     * @param  string      $grant  One of the GRANT_* constants.
-     * @param  array       $params Additional form params (e.g. 'code', 'redirect_uri', 'scope').
+     * @param string $grant One of the GRANT_* constants.
+     * @param array $params Additional form params (e.g. 'code', 'redirect_uri', 'scope').
      * @return false|array Token array with 'bearer' and 'expires', or false on failure.
      */
     public function requestToken(string $grant, array $params = []): false|array
